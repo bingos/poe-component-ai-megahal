@@ -1,0 +1,7 @@
+MANIFEST
+Makefile.PL
+megahal.trn
+megahal.dic
+megahal.brn
+lib/POE/Component/AI/MegaHAL.pm
+t/1_spawn.t
