@@ -58,6 +58,7 @@ sub _megahal_function {
 	return;
   }
 
+
   if ( $state eq 'do_reply' and not defined ( $args->{text} ) ) {
 	return;
   }
@@ -65,6 +66,8 @@ sub _megahal_function {
   if ( $state eq 'initial_greeting' and defined ( $args->{text} ) ) {
 	delete ( $args->{text} );
   }
+  
+  $args->{sender} = $sender;
 
   $args->{func} = $state;
   $kernel->refcount_increment( $sender => __PACKAGE__ );
@@ -123,7 +126,6 @@ sub _child_stdout {
   my ($kernel,$self,$input) = @_[KERNEL,OBJECT,ARG0];
   my $sender = delete( $input->{sender} );
   my $event = delete( $input->{event} );
-
   $kernel->refcount_decrement( $sender => __PACKAGE__ );
   $kernel->post( $sender => $event => $input );
   undef;
@@ -141,6 +143,7 @@ sub shutdown {
   $self->{shutdown} = 1;
   #$self->{wheel}->kill(9);
   $self->{wheel}->shutdown_stdin;
+  delete $self->{wheel};
   undef;
 }
 
