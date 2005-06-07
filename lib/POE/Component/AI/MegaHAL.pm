@@ -68,6 +68,7 @@ sub _megahal_function {
 
   $args->{func} = $state;
   $kernel->refcount_increment( $sender => __PACKAGE__ );
+  $args->{sender} = $sender;
 
   if ( defined ( $self->{wheel} ) ) {
 	$self->{wheel}->put( $args );
@@ -138,7 +139,8 @@ sub shutdown {
   }
 
   $self->{shutdown} = 1;
-  $self->{wheel}->kill(9);
+  #$self->{wheel}->kill(9);
+  $self->{wheel}->shutdown_stdin;
   undef;
 }
 

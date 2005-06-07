@@ -15,7 +15,7 @@ BEGIN { use_ok('POE::Component::AI::MegaHAL') };
 
 use POE;
 
-my ($self) = POE::Component::AI::MegaHAL->spawn( autosave => 0, debug => 0, options => { trace => 0 } );
+my ($self) = POE::Component::AI::MegaHAL->spawn( path => '.', autosave => 0, debug => 0, options => { trace => 0 } );
 
 isa_ok ( $self, 'POE::Component::AI::MegaHAL' );
 
