@@ -19,12 +19,13 @@ sub spawn {
 
   my $options = delete ( $params{'options'} );
 
-  my ($self) = bless \%params, $package;
+  my $self = bless \%params, $package;
 
   $self->{session_id} = POE::Session->create(
 	object_states => [
-		$self => { 'do_reply' => '_megahal_function',
-			   'initial_greeting' => '_megahal_function',
+		$self => {
+			do_reply => '_megahal_function',
+			initial_greeting => '_megahal_function',
 		},
 		$self => [ qw(_child_closed _child_error _child_stderr _child_stdout _start shutdown) ],
 	],
@@ -77,16 +78,16 @@ sub _megahal_function {
 sub _start {
   my ($kernel,$self) = @_[KERNEL,OBJECT];
 
-  $self->{session_id} = $_[SESSION]->ID();
+#  $self->{session_id} = $_[SESSION]->ID();
 
   if ( $self->{alias} ) {
 	$kernel->alias_set( $self->{alias} );
   } else {
 	$kernel->refcount_increment( $self->{session_id} => __PACKAGE__ );
   }
-  
+
   $self->{wheel} = POE::Wheel::Run->new(
-	Program => \&main(),
+	Program => \&main,
 	ProgramArgs => [ AutoSave => $self->{autosave}, Path => $self->{path} ],
 	ErrorEvent => '_child_error',
 	CloseEvent => '_child_closed',
@@ -96,6 +97,8 @@ sub _start {
 	StderrFilter => POE::Filter::Line->new(),
 	( $^O eq 'MSWin32' ? ( CloseOnCall => 0 ) : ( CloseOnCall => 1 ) ),
   );
+  
+  return;
 }
 
 sub _child_closed {
@@ -134,8 +137,8 @@ sub shutdown {
 	$kernel->refcount_decrement( $self->{session_id} => __PACKAGE__ );
   }
 
-  $self->{wheel}->kill(9);
   $self->{shutdown} = 1;
+  $self->{wheel}->kill(9);
   undef;
 }
 
@@ -159,10 +162,10 @@ sub main {
   while ( sysread ( STDIN, $raw, $size ) ) {
     my $requests = $filter->get( [ $raw ] );
     foreach my $req ( @{ $requests } ) {
-	&_process_request( $megahal, $req, $filter );
+	_process_requests( $megahal, $req, $filter );
     }
   }
-  $megahal->DESTROY;
+  $megahal->DESTROY if ($megahal);
 }
 
 sub _process_requests {
