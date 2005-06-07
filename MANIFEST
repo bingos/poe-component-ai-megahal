@@ -4,5 +4,7 @@ Makefile.PL
 megahal.trn
 megahal.dic
 megahal.brn
+README
 lib/POE/Component/AI/MegaHAL.pm
 t/1_spawn.t
+META.yml                                 Module meta-data (added by MakeMaker)

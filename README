@@ -1,0 +1,14 @@
+POE::Component::AI::MegaHAL
+===========================
+
+A non-blocking POE wrapper around AI::MegaHAL <http://search.cpan.org/~cspencer/AI-MegaHAL-0.04/>
+
+Requirements:
+=============
+
+POE-0.31 or greater
+AI-MegaHAL-0.04
+Carp
+
+PING?
+PONG!
