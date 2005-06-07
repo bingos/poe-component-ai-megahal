@@ -1,4 +1,5 @@
 MANIFEST
+MANIFEST.SKIP
 Makefile.PL
 megahal.trn
 megahal.dic
