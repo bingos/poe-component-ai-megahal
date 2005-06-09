@@ -5,7 +5,7 @@ use POE 0.31 qw(Wheel::Run Filter::Line Filter::Reference);
 use Carp;
 use vars qw($VERSION);
 
-$VERSION = '0.011';
+$VERSION = '0.89';
 
 sub spawn {
   my ($package) = shift;
@@ -162,6 +162,7 @@ sub main {
 
   if ( $@ ) {
 	print STDERR $@ . "\n";
+	return;
   }
 
   while ( sysread ( STDIN, $raw, $size ) ) {
@@ -170,7 +171,8 @@ sub main {
 	_process_requests( $megahal, $req, $filter );
     }
   }
-  $megahal->DESTROY if ($megahal);
+  $megahal->_cleanup() if ( $params{'AutoSave'} );
+  $megahal->DESTROY;
 }
 
 sub _process_requests {
