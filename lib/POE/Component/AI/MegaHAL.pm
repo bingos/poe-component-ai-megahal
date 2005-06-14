@@ -5,7 +5,7 @@ use POE 0.31 qw(Wheel::Run Filter::Line Filter::Reference);
 use Carp;
 use vars qw($VERSION);
 
-$VERSION = '0.89';
+$VERSION = '1.00';
 
 sub spawn {
   my ($package) = shift;
@@ -24,8 +24,9 @@ sub spawn {
   $self->{session_id} = POE::Session->create(
 	object_states => [
 		$self => {
-			do_reply => '_megahal_function',
+			do_reply         => '_megahal_function',
 			initial_greeting => '_megahal_function',
+			_cleanup         => '_megahal_function',
 		},
 		$self => [ qw(_child_closed _child_error _child_stderr _child_stdout _start shutdown) ],
 	],
@@ -67,6 +68,10 @@ sub _megahal_function {
 	delete ( $args->{text} );
   }
   
+  if ( $state eq '_cleanup' and defined ( $args->{text} ) ) {
+	delete ( $args->{text} );
+  }
+  
   $args->{sender} = $sender;
 
   $args->{func} = $state;
@@ -81,8 +86,6 @@ sub _megahal_function {
 
 sub _start {
   my ($kernel,$self) = @_[KERNEL,OBJECT];
-
-#  $self->{session_id} = $_[SESSION]->ID();
 
   if ( $self->{alias} ) {
 	$kernel->alias_set( $self->{alias} );
@@ -243,7 +246,7 @@ Returns the component session id.
 
 These are the events that we'll accept. 
 
-Both events accept a hashref as the first parameter. You must specify 'event' as the event in your session where you 
+All megahal related events accept a hashref as the first parameter. You must specify 'event' as the event in your session where you 
 want the response to go. See the example in the SYNOPSIS.
 
 The 'shutdown' event doesn't require any parameters.
@@ -258,6 +261,10 @@ Solicits the initial greeting returned by the brain on start-up.
 
 Submits text to the brain and solicits a reply.
 In the hashref you must specify 'text' with the data you wish to submit to the L<AI::MegaHAL|AI::MegaHAL> object.
+
+=item _cleanup
+
+Saves the megahal brain to file.
 
 =item shutdown
 
