@@ -5,20 +5,15 @@ use POE 0.31 qw(Wheel::Run Filter::Line Filter::Reference);
 use Carp;
 use vars qw($VERSION);
 
-$VERSION = '1.00';
+$VERSION = '1.01';
 
 sub spawn {
-  my ($package) = shift;
+  my $package = shift;
   my %params = @_;
 
-  foreach my $key ( keys %params ) {
-	$params{ lc ( $key ) } = delete( $params{ $key } );
-  }
-
-  $params{'autosave'} = 1 unless ( defined ( $params{'autosave'} ) and $params{'autosave'} == 0 );
-
-  my $options = delete ( $params{'options'} );
-
+  $params{ lc $_ } = delete $params{$_} for keys %params;
+  $params{'autosave'} = 1 unless defined ( $params{'autosave'} ) and $params{'autosave'} eq '0';
+  my $options = delete $params{'options'};
   my $self = bless \%params, $package;
 
   $self->{session_id} = POE::Session->create(
@@ -28,7 +23,7 @@ sub spawn {
 			initial_greeting => '_megahal_function',
 			_cleanup         => '_megahal_function',
 		},
-		$self => [ qw(_child_closed _child_error _child_stderr _child_stdout _start shutdown) ],
+		$self => [ qw(_child_closed _child_error _child_stderr _child_stdout _start shutdown _sig_chld) ],
 	],
 	( ref ( $options ) eq 'HASH' ? ( options => $options ) : () ),
   )->ID();
@@ -44,7 +39,7 @@ sub _megahal_function {
   my ($kernel,$self,$state) = @_[KERNEL,OBJECT,STATE];
   my $sender = $_[SENDER]->ID();
 
-  return if ( $self->{shutdown} );
+  return if $self->{shutdown};
   my $args;
   if ( ref( $_[ARG0] ) eq 'HASH' ) {
 	$args = { %{ $_[ARG0] } };
@@ -60,25 +55,24 @@ sub _megahal_function {
   }
 
 
-  if ( $state eq 'do_reply' and not defined ( $args->{text} ) ) {
+  if ( $state eq 'do_reply' and !defined $args->{text} ) {
 	return;
   }
 
-  if ( $state eq 'initial_greeting' and defined ( $args->{text} ) ) {
-	delete ( $args->{text} );
+  if ( $state eq 'initial_greeting' and defined $args->{text} ) {
+	delete $args->{text};
   }
   
-  if ( $state eq '_cleanup' and defined ( $args->{text} ) ) {
-	delete ( $args->{text} );
+  if ( $state eq '_cleanup' and defined $args->{text} ) {
+	delete $args->{text};
   }
   
   $args->{sender} = $sender;
-
   $args->{func} = $state;
   $kernel->refcount_increment( $sender => __PACKAGE__ );
   $args->{sender} = $sender;
 
-  if ( defined ( $self->{wheel} ) ) {
+  if ( defined $self->{wheel} ) {
 	$self->{wheel}->put( $args );
   }
   undef;
@@ -92,6 +86,8 @@ sub _start {
   } else {
 	$kernel->refcount_increment( $self->{session_id} => __PACKAGE__ );
   }
+
+  $kernel->sig( 'CHLD' => '_sig_chld' );
 
   $self->{wheel} = POE::Wheel::Run->new(
 	Program => \&main,
@@ -108,27 +104,32 @@ sub _start {
   return;
 }
 
+sub _sig_chld {
+  $_[KERNEL]->sig( 'CHLD' );
+  $_[KERNEL]->sig_handled();
+}
+
 sub _child_closed {
-  delete ( $_[OBJECT]->{wheel} );
+  delete $_[OBJECT]->{wheel};
   undef;
 }
 
 sub _child_error {
-  delete ( $_[OBJECT]->{wheel} );
+  delete $_[OBJECT]->{wheel};
   undef;
 }
 
 sub _child_stderr {
   my ($kernel,$self,$input) = @_[KERNEL,OBJECT,ARG0];
 
-  warn $input . "\n" if ( $self->{debug} );
+  warn $input . "\n" if $self->{debug};
   undef;
 }
 
 sub _child_stdout {
   my ($kernel,$self,$input) = @_[KERNEL,OBJECT,ARG0];
-  my $sender = delete( $input->{sender} );
-  my $event = delete( $input->{event} );
+  my $sender = delete $input->{sender};
+  my $event = delete $input->{event};
   $kernel->refcount_decrement( $sender => __PACKAGE__ );
   $kernel->post( $sender => $event => $input );
   undef;
@@ -138,20 +139,17 @@ sub shutdown {
   my ($kernel,$self) = @_[KERNEL,OBJECT];
 
   $kernel->alias_remove( $_ ) for $kernel->alias_list();
-
-  unless ( $self->{alias} ) {
-	$kernel->refcount_decrement( $self->{session_id} => __PACKAGE__ );
-  }
+  $kernel->refcount_decrement( $self->{session_id} => __PACKAGE__ ) unless $self->{alias};
 
   $self->{shutdown} = 1;
   #$self->{wheel}->kill(9);
   $self->{wheel}->shutdown_stdin;
-  delete $self->{wheel};
+  #delete $self->{wheel};
   undef;
 }
 
 sub main {
-  my (%params) = @_;
+  my %params = @_;
   if ( $^O eq 'MSWin32' ) {
      binmode(STDIN); binmode(STDOUT);
   }
@@ -170,11 +168,9 @@ sub main {
 
   while ( sysread ( STDIN, $raw, $size ) ) {
     my $requests = $filter->get( [ $raw ] );
-    foreach my $req ( @{ $requests } ) {
-	_process_requests( $megahal, $req, $filter );
-    }
+    _process_requests( $megahal, $_, $filter ) for @{ $requests };
   }
-  $megahal->_cleanup() if ( $params{'AutoSave'} );
+  $megahal->_cleanup() if $params{'AutoSave'};
   $megahal->DESTROY;
 }
 
@@ -232,9 +228,12 @@ POE::Component::AI::MegaHAL provides a non-blocking wrapper around L<AI::MegaHAL
 
 =item spawn
 
-Accepts a number of arguments. 'autosave' and 'path' are passed to L<AI::MegaHAL|AI::MegaHAL>; 'debug' sets the debug mode;
-'options' is a hashref of parameters to pass to the component's L<POE::Session|POE::Session>. 'alias', is supported for 
-using L<POE::Kernel|POE::Kernel> aliases.
+Accepts a number of arguments: 
+
+  'autosave' and 'path' are passed to AI::MegaHAL; 
+  'debug' sets the debug mode;
+  'options' is a hashref of parameters to pass to the component's POE::Session; 
+  'alias', is supported for using POE::Kernel aliases;
 
 =item session_id
 
@@ -260,7 +259,7 @@ Solicits the initial greeting returned by the brain on start-up.
 =item do_reply
 
 Submits text to the brain and solicits a reply.
-In the hashref you must specify 'text' with the data you wish to submit to the L<AI::MegaHAL|AI::MegaHAL> object.
+In the hashref you must specify 'text' with the data you wish to submit to the L<AI::MegaHAL> object.
 
 =item _cleanup
 
@@ -285,6 +284,8 @@ with contributions by David Davies <xantus>.
 
 =head1 SEE ALSO
 
-L<AI::MegaHAL|AI::MegaHAL>
+L<AI::MegaHAL>
+
 L<http://megahal.sourceforge.net/>
-L<POE|POE>
+
+L<POE>
