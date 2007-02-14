@@ -1,11 +1,12 @@
 package POE::Component::AI::MegaHAL;
 
+use strict;
 use AI::MegaHAL;
 use POE 0.31 qw(Wheel::Run Filter::Line Filter::Reference);
 use Carp;
 use vars qw($VERSION);
 
-$VERSION = '1.01';
+$VERSION = '1.05';
 
 sub spawn {
   my $package = shift;
@@ -38,12 +39,14 @@ sub session_id {
 sub _megahal_function {
   my ($kernel,$self,$state) = @_[KERNEL,OBJECT,STATE];
   my $sender = $_[SENDER]->ID();
-
   return if $self->{shutdown};
+
   my $args;
+
   if ( ref( $_[ARG0] ) eq 'HASH' ) {
 	$args = { %{ $_[ARG0] } };
-  } else {
+  } 
+  else {
 	warn "first parameter must be a hashref, trying to adjust. "
 		."(fix this to get rid of this message)";
 	$args = { @_[ARG0..$#_] };
@@ -55,27 +58,19 @@ sub _megahal_function {
   }
 
 
-  if ( $state eq 'do_reply' and !defined $args->{text} ) {
-	return;
-  }
+  return if $state eq 'do_reply' and !defined $args->{text};
 
-  if ( $state eq 'initial_greeting' and defined $args->{text} ) {
-	delete $args->{text};
-  }
+  delete $args->{text} if $state eq 'initial_greeting' and defined $args->{text};
   
-  if ( $state eq '_cleanup' and defined $args->{text} ) {
-	delete $args->{text};
-  }
+  delete $args->{text} if $state eq '_cleanup' and defined $args->{text};
   
   $args->{sender} = $sender;
   $args->{func} = $state;
   $kernel->refcount_increment( $sender => __PACKAGE__ );
   $args->{sender} = $sender;
 
-  if ( defined $self->{wheel} ) {
-	$self->{wheel}->put( $args );
-  }
-  undef;
+  $self->{wheel}->put( $args ) if defined $self->{wheel};
+  return;
 }
 
 sub _start {
@@ -86,8 +81,6 @@ sub _start {
   } else {
 	$kernel->refcount_increment( $self->{session_id} => __PACKAGE__ );
   }
-
-  $kernel->sig( 'CHLD' => '_sig_chld' );
 
   $self->{wheel} = POE::Wheel::Run->new(
 	Program => \&main,
@@ -100,30 +93,29 @@ sub _start {
 	StderrFilter => POE::Filter::Line->new(),
 	( $^O eq 'MSWin32' ? ( CloseOnCall => 0 ) : ( CloseOnCall => 1 ) ),
   );
-  
+
+  $kernel->sig_child( $self->{wheel}->PID, '_sig_chld' );
   return;
 }
 
 sub _sig_chld {
-  $_[KERNEL]->sig( 'CHLD' );
   $_[KERNEL]->sig_handled();
 }
 
 sub _child_closed {
   delete $_[OBJECT]->{wheel};
-  undef;
+  return;
 }
 
 sub _child_error {
   delete $_[OBJECT]->{wheel};
-  undef;
+  return;
 }
 
 sub _child_stderr {
   my ($kernel,$self,$input) = @_[KERNEL,OBJECT,ARG0];
-
   warn $input . "\n" if $self->{debug};
-  undef;
+  return;
 }
 
 sub _child_stdout {
@@ -132,20 +124,16 @@ sub _child_stdout {
   my $event = delete $input->{event};
   $kernel->refcount_decrement( $sender => __PACKAGE__ );
   $kernel->post( $sender => $event => $input );
-  undef;
+  return;
 }
 
 sub shutdown {
   my ($kernel,$self) = @_[KERNEL,OBJECT];
-
   $kernel->alias_remove( $_ ) for $kernel->alias_list();
   $kernel->refcount_decrement( $self->{session_id} => __PACKAGE__ ) unless $self->{alias};
-
   $self->{shutdown} = 1;
-  #$self->{wheel}->kill(9);
   $self->{wheel}->shutdown_stdin;
-  #delete $self->{wheel};
-  undef;
+  return;
 }
 
 sub main {

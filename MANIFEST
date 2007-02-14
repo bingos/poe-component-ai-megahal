@@ -1,10 +1,23 @@
-MANIFEST
-MANIFEST.SKIP
-Makefile.PL
-megahal.trn
-megahal.dic
-megahal.brn
-README
+Changes
+examples/synopsis.pl
+inc/Module/Install.pm
+inc/Module/Install/Base.pm
+inc/Module/Install/Can.pm
+inc/Module/Install/Fetch.pm
+inc/Module/Install/Makefile.pm
+inc/Module/Install/Metadata.pm
+inc/Module/Install/Win32.pm
+inc/Module/Install/WriteAll.pm
 lib/POE/Component/AI/MegaHAL.pm
+Makefile.PL
+MANIFEST			This list of files
+MANIFEST.SKIP
+megahal.brn
+megahal.dic
+megahal.trn
+META.yml
+README
 t/1_spawn.t
-META.yml                                 Module meta-data (added by MakeMaker)
+t/2_pod.t
+t/3_pod_coverage.t
+t/4_test_kwalitee.t
