@@ -6,7 +6,7 @@ use POE 0.31 qw(Wheel::Run Filter::Line Filter::Reference);
 use Carp;
 use vars qw($VERSION);
 
-$VERSION = '1.05';
+$VERSION = '1.07';
 
 sub spawn {
   my $package = shift;
@@ -177,7 +177,7 @@ __END__
 
 =head1 NAME
 
-POE::Component::AI::MegaHAL -- A non-blocking wrapper around L<AI::MegaHAL|AI::MegaHAL>.
+POE::Component::AI::MegaHAL - A non-blocking wrapper around AI::MegaHAL.
 
 =head1 SYNOPSIS
 
@@ -208,7 +208,7 @@ POE::Component::AI::MegaHAL -- A non-blocking wrapper around L<AI::MegaHAL|AI::M
 
 =head1 DESCRIPTION
 
-POE::Component::AI::MegaHAL provides a non-blocking wrapper around L<AI::MegaHAL|AI::MegaHAL>. 
+POE::Component::AI::MegaHAL provides a non-blocking wrapper around L<AI::MegaHAL>. 
 
 =head1 METHODS
 
