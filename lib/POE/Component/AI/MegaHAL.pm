@@ -1,12 +1,13 @@
 package POE::Component::AI::MegaHAL;
 
 use strict;
+use warnings;
 use AI::MegaHAL;
-use POE 0.31 qw(Wheel::Run Filter::Line Filter::Reference);
+use POE qw(Wheel::Run Filter::Line Filter::Reference);
 use Carp;
 use vars qw($VERSION);
 
-$VERSION = '1.08';
+$VERSION = '1.12';
 
 sub spawn {
   my $package = shift;
@@ -122,8 +123,8 @@ sub _child_stdout {
   my ($kernel,$self,$input) = @_[KERNEL,OBJECT,ARG0];
   my $sender = delete $input->{sender};
   my $event = delete $input->{event};
-  $kernel->refcount_decrement( $sender => __PACKAGE__ );
   $kernel->post( $sender => $event => $input );
+  $kernel->refcount_decrement( $sender => __PACKAGE__ );
   return;
 }
 
@@ -184,7 +185,7 @@ POE::Component::AI::MegaHAL - A non-blocking wrapper around AI::MegaHAL.
     use POE qw(Component::AI::MegaHAL);
 
     my $poco = POE::Component::AI::MegaHAL->spawn( autosave => 1, debug => 0, 
-					      	   path => '.', options => { trace => 1 } );
+					      	   path => '.', options => { trace => 0 } );
 
     POE::Session->create(
 	package_states => [
