@@ -7,7 +7,7 @@ use POE qw(Wheel::Run Filter::Line Filter::Reference);
 use Carp;
 use vars qw($VERSION);
 
-$VERSION = '1.12';
+$VERSION = '1.14';
 
 sub spawn {
   my $package = shift;
@@ -270,6 +270,12 @@ will contain the applicable response from the brain.
 Chris 'BinGOs' Williams
 
 with contributions by David Davies <xantus>.
+
+=head1 LICENSE
+
+Copyright C<(c)> Chris Williams and David Davis
+
+This module may be used, modified, and distributed under the same terms as Perl itself. Please see the license that came with your Perl distribution for details.
 
 =head1 SEE ALSO
 

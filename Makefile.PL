@@ -1,3 +1,4 @@
+use strict;
 use inc::Module::Install;
 name 'POE-Component-AI-MegaHAL';
 license 'perl';
@@ -13,4 +14,5 @@ requires 'POE::Wheel::Run' => 0;
 requires 'POE::Filter::Line' => 0; 
 requires 'POE::Filter::Reference' => 0;
 requires 'AI::MegaHAL' => 0.05;
+clean_files 'megahal.brn';
 WriteAll();
