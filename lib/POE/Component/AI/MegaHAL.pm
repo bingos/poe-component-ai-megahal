@@ -7,7 +7,7 @@ use POE qw(Wheel::Run Filter::Line Filter::Reference);
 use Carp;
 use vars qw($VERSION);
 
-$VERSION = '1.14';
+$VERSION = '1.16';
 
 sub spawn {
   my $package = shift;
@@ -23,6 +23,7 @@ sub spawn {
 		$self => {
 			do_reply         => '_megahal_function',
 			initial_greeting => '_megahal_function',
+			learn            => '_megahal_function',
 			_cleanup         => '_megahal_function',
 		},
 		$self => [ qw(_child_closed _child_error _child_stderr _child_stdout _start shutdown _sig_chld) ],
@@ -59,7 +60,7 @@ sub _megahal_function {
   }
 
 
-  return if $state eq 'do_reply' and !defined $args->{text};
+  return if $state =~ /^(do_reply|learn)$/ and !defined $args->{text};
 
   delete $args->{text} if $state eq 'initial_greeting' and defined $args->{text};
   
@@ -248,6 +249,11 @@ Solicits the initial greeting returned by the brain on start-up.
 =item do_reply
 
 Submits text to the brain and solicits a reply.
+In the hashref you must specify 'text' with the data you wish to submit to the L<AI::MegaHAL> object.
+
+=item learn
+
+Submits text to the brain without soliciting a reply.
 In the hashref you must specify 'text' with the data you wish to submit to the L<AI::MegaHAL> object.
 
 =item _cleanup
