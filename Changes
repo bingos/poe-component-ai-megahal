@@ -1,6 +1,9 @@
 POE::Component::AI::MegaHAL
 ===========================
 
+1.18
+	- Properly save our session id
+
 1.16	Thu Jul 24 11:27:48 BST 2008
 	- Added 'learn' as per RT #37894
 
