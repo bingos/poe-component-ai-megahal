@@ -29,7 +29,7 @@ sub spawn {
 		$self => [ qw(_child_closed _child_error _child_stderr _child_stdout _start shutdown _sig_chld) ],
 	],
 	( ref ( $options ) eq 'HASH' ? ( options => $options ) : () ),
-  )->ID();
+  );
 
   return $self;
 }
