@@ -1,8 +1,11 @@
 POE::Component::AI::MegaHAL
 ===========================
 
-1.18
-	- Properly save our session id
+1.18	Tue May  5 15:56:44 BST 2009
+	- Properly save our session id (hinrik)
+	- Removed LICENSE file, using auto_license now.
+	- Added githubmeta for META.yml meta.
+	- Tidied up the POD
 
 1.16	Thu Jul 24 11:27:48 BST 2008
 	- Added 'learn' as per RT #37894
