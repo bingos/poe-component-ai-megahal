@@ -8,7 +8,7 @@ my @questions = ('Hello World!', 'Howdy!', 'Badger! Badger! Badgers! Mushroom, m
 
 POE::Session->create(
 	inline_states => {
-		_start => \&test_start, 
+		_start => \&test_start,
 		_get_reply => \&get_reply,
 		_got_reply => \&got_reply,
 		_stop => sub { pass('stop'); },
